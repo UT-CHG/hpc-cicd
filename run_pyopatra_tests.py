@@ -15,7 +15,7 @@ base_job_config = {
   "name": "pyopatra-test",
   "appId": "pyopatra-0.0.1",
   "archive": False,
-  "batchQueue": "skx-dev", #if multiple jobs are needed, this will need to be switched to skx
+  "batchQueue": "skx-normal", #if multiple jobs are needed, this will need to be switched to skx
   "processorsPerNode": 32,
   "nodeCount": 1,
   "inputs": {},
@@ -123,6 +123,7 @@ def main(testsdir,
     listener = Listener(('localhost', 9001), authkey=b'speakfriendandenter')
     conn = listener.accept()
     completed = {}
+    failed = {}
     while True:
         try:
             msg = conn.recv()
@@ -135,11 +136,16 @@ def main(testsdir,
         if msg['status'] in ['FINISHED', 'FAILED', 'STOPPED']:
             job_id = msg['id']
             completed[job_id] = msg
+            if msg['status'] in ['FAILED', 'STOPPED']:
+                failed[job_id] = msg
             print(f"Job {job_id} completed.")
 
         if len(completed) == len(jobs):
             print("All jobs complete.")
             break
+
+    if len(failed):
+        raise RuntimeError("Jobs Failed!", failed)
 
 if __name__ == "__main__":
     Fire(main, name="run-pyopatra-tests")

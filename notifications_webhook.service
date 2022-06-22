@@ -1,0 +1,14 @@
+[Unit]
+Description=TAPIS Webhook Listener
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/tapisv2
+ExecStart=/home/ubuntu/.local/bin/uvicorn tapis_notifications_webhook:app --host=0.0.0.0
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+

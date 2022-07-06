@@ -4,30 +4,11 @@ from fire import Fire
 import os
 import yaml
 from datetime import datetime
+from config import server_config, base_job_config
 
 """
 Entry script to run HPC tests via CI/CD
 """
-
-# TODO - see if there's a way to not hardcode this
-
-base_job_config = {
-  "name": "pyopatra-test",
-  "appId": "pyopatra-0.0.1",
-  "archive": False,
-  "batchQueue": "skx-normal", #if multiple jobs are needed, this will need to be switched to skx
-  "processorsPerNode": 32,
-  "nodeCount": 1,
-  "inputs": {},
-  "parameters": {},
-  "notifications": [
-    {
-        "event": "*",
-        "persistent": True,
-        "url": "http://129.114.17.65:8000"
-    }
-  ]
-}
 
 class TestCase:
     DEFAULT_CONFIG = {
@@ -86,8 +67,7 @@ class TestCase:
         return self.remote_dir 
 
 def main(testsdir,
-    tapisconfig="config.json",
-    storage_system="bpachev.stampede2.storage" #TODO - don't hardcocde this
+    tapisconfig="tapisconfig.json",
     ):
     # iterate over tests
     # currently each directory in the tests directory describes a single test
@@ -108,19 +88,18 @@ def main(testsdir,
     for test in tests:
         zipfile = test.make_zip_file()
         remote_dir = test.get_remote_dir()
-        t.mkdir(remote_dir, storage_system)
-        t.upload(zipfile, remote_dir, storage_system)
+        t.mkdir(remote_dir)
+        t.upload(zipfile, remote_dir)
         # TODO - check for errors with the upload operations
 
     print("Uploaded test assets. Submitting jobs. . .")
     jobs = {}
     for test in tests:
-        j = t.submit_job(test.get_job_config(storage_system))
+        j = t.submit_job(test.get_job_config(t.storage_system))
         jobs[j['result']['id']] = j['result']
 
     print(f"Submitted {len(jobs)} jobs. Monitoring status. . .")
-    # TODO - don't hardcode the port here
-    listener = Listener(('localhost', 9001), authkey=b'speakfriendandenter')
+    listener = Listener(('localhost', server_config['message_port']), authkey=b'speakfriendandenter')
     conn = listener.accept()
     completed = {}
     failed = {}

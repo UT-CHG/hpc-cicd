@@ -14,7 +14,7 @@ base_url = "https://api.tacc.utexas.edu/"
 
 class TapisClient:
 
-    REQ_FIELDS = ["username", "password", "clientName"]
+    REQ_FIELDS = ["username", "password", "clientName", "storage_system"]
 
     OPT_FIELDS = ["api_key", "api_secret"]
 
@@ -130,19 +130,19 @@ class TapisClient:
 
         return res.json()
 
-    def mkdir(self, dirname, system):
+    def mkdir(self, dirname):
         """Make a directory on a storage system
         """
 
-        res = requests.put(base_url+f'files/v2/media/system/{system}',
+        res = requests.put(base_url+f'files/v2/media/system/{self.storage_system}',
             headers=self._get_json_headers(),
             json = {'action': 'mkdir', 'path': dirname} )
 
         return self.check_for_error(res)
 
-    def upload(self, local_path, remote_path, system):
+    def upload(self, local_path, remote_path):
 
-        res = requests.post(base_url+f'files/v2/media/system/{system}/{remote_path}',
+        res = requests.post(base_url+f'files/v2/media/system/{self.storage_system}/{remote_path}',
             headers=self._get_auth_header(),
             files={'fileToUpload': open(local_path, 'rb')}
             )
@@ -169,4 +169,4 @@ class TapisClient:
 
 if __name__ == "__main__":
 
-    c = TapisClient(configfile="config.json")
+    c = TapisClient(configfile="tapisconfig.json")
